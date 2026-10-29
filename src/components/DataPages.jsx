@@ -9,10 +9,10 @@ import ColumnRuleEditor from "./ColumnRuleEditor.jsx";
 
 const MATCH_LABELS = { exact: "Esatto", normalized: "Normalizzato", manual: "Manuale", none: "Nessun XML" };
 
-export function VimPage({ project, focusId, onLink, onOpen }) {
+export function VimPage({ project, editing, onEdit, onLink, onOpen }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [editing, setEditing] = useState(() => focusId ? `${project.documents.find((doc) => doc.id === focusId)?.vim ? "vim" : "xml"}:${focusId}` : null);
+  const setEditing = onEdit;
   const documents = project.documents;
   const matches = (doc) => `${doc.vim?.reference ?? ""} ${doc.vim?.vendor ?? ""} ${doc.invoice?.number ?? ""} ${doc.invoice?.fileName ?? ""} ${doc.supplier?.name ?? ""}`.toLowerCase().includes(query.trim().toLowerCase());
   const rows = documents.filter((doc) => doc.vim && matches(doc)
@@ -130,13 +130,13 @@ function GeneralRules({ rules, hasProject, onChange, onReset }) {
   </section>;
 }
 
-export function RulesPage({ rules, hasProject, documents, onChange, onReset }) {
+export function RulesPage({ rules, hasProject, documents, onChange, onReset, editing, onEdit }) {
   const [query, setQuery] = useState("");
   const [hideFree, setHideFree] = useState(true);
-  const [editing, setEditing] = useState(null);
+  const setEditing = onEdit;
   const needle = query.trim().toLowerCase();
-  const visible = TRACE_COLUMNS.filter((column) => (!hideFree || column.mode !== "Vuoto")
-    && (!needle || `${column.letter} ${column.label} ${column.text}`.toLowerCase().includes(needle)));
+  const visible = TRACE_COLUMNS.filter((column) => column.index === editing || ((!hideFree || column.mode !== "Vuoto")
+    && (!needle || `${column.letter} ${column.label} ${column.text}`.toLowerCase().includes(needle))));
   return <div className="page-scroll"><section className="data-page">
     <div className="data-page-heading"><div><p className="eyebrow">PROFILO REGOLE · DEMO</p><h1>Regole contabili e tracciato di registrazione</h1>
       <p className="muted">Regole contabili generali e regole per {TRACE_COLUMNS.length} colonne: testo e dati, casi condizionali ordinati e risultati diversi per categoria di riga. I controlli contabili restano obbligatori. Le modifiche richiedono una nuova verifica delle lavorazioni.</p></div></div>

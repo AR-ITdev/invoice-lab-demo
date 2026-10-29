@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Relative base: the static build works from any host or subfolder, which keeps a future migration trivial.
+// Absolute asset URLs also work when a nested application route is loaded directly.
 export default defineConfig({
-  base: "./",
+  base: "/",
   plugins: [react()],
 });

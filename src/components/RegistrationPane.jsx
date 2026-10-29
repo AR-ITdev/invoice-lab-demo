@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Check, ChevronLeft, ChevronRight, List, RotateCcw, Trash2 } from "lucide-react";
 import { STATUS, dateText, money } from "../lib/format.js";
 import { ACCOUNTS, COL, TRACE_COLUMNS, VAT_CODES, column } from "../lib/proposal.js";
@@ -24,8 +23,7 @@ function Navigation({ position, count, onPrev, onNext, onToggleList, listOpen })
   </div>;
 }
 
-export default function RegistrationPane({ doc, association, navigation, onReview, onAction, onStatus }) {
-  const [tab, setTab] = useState("main");
+export default function RegistrationPane({ doc, association, navigation, onReview, onAction, onStatus, tab, onTab }) {
   const { preview, invoice, review } = doc;
   const locked = doc.status === "processed" || doc.status === "discarded";
 
@@ -61,8 +59,8 @@ export default function RegistrationPane({ doc, association, navigation, onRevie
         onClick={() => window.confirm("Rigenerare la proposta? Le modifiche manuali saranno sostituite.") && onReview(() => ({}))}>Rigenera</button></div>}
     </div>
     <nav className="registration-tabs" aria-label="Sezioni registrazione">
-      <button type="button" className={tab === "main" ? "active" : ""} onClick={() => setTab("main")}>Dati principali</button>
-      <button type="button" className={tab === "trace" ? "active" : ""} onClick={() => setTab("trace")}>Tracciato ({TRACE_COLUMNS.length} colonne){edited ? ` · ${edited} modifiche` : ""}</button>
+      <button type="button" className={tab === "main" ? "active" : ""} onClick={() => onTab("main")}>Dati principali</button>
+      <button type="button" className={tab === "trace" ? "active" : ""} onClick={() => onTab("trace")}>Tracciato ({TRACE_COLUMNS.length} colonne){edited ? ` · ${edited} modifiche` : ""}</button>
     </nav>
     <div className="registration-content">
       {association}

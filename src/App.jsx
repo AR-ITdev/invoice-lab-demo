@@ -12,6 +12,7 @@ import { associationWarnings, changeAssociation } from "./lib/matching.js";
 import AssociationControls from "./components/AssociationControls.jsx";
 import { validateColumnSettings } from "./lib/columnRules.js";
 import { readStored, writeStored } from "./lib/storage.js";
+import useRoute from "./lib/useRoute.js";
 
 const STORAGE_KEY = "tracciati-demo-state-v1";
 const PORTFOLIO_URL = "https://ar-it.dev/portfolio";
@@ -62,20 +63,20 @@ function SplitHandle({ split, onChange }) {
 export default function App() {
   const [initial] = useState(loadState);
   const [state, setState] = useState(initial.state);
-  const [page, setPage] = useState(() => (initial.state.imported ? "documents" : "home"));
+  const [route, navigateRoute] = useRoute();
+  const page = route.page;
+  const setPage = (next) => navigate({ page: next });
   const [storageReadError] = useState(initial.error);
   const [storageWriteError, setStorageWriteError] = useState(null);
   const [splitStored] = useState(() => readStored(SPLIT_KEY, 50));
   const [splitWriteError, setSplitWriteError] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [staged, setStaged] = useState({ vim: false, xml: false });
   const [listOpen, setListOpen] = useState(() => !narrow());
-  const [workspace, setWorkspace] = useState("proposal");
+  const workspace = route.view === "document" ? "document" : "proposal";
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [vimFocus, setVimFocus] = useState(null);
   const [toast, setToast] = useState(() => state.profileUpdated ? { text: "Profilo contabile aggiornato: bozze e conferme precedenti azzerate per applicare i nuovi controlli IVA. Dati mock e anagrafica conservati.", id: Date.now() } : null);
   const [split, setSplit] = useState(() => clampSplit(Number(splitStored.value) || 50));
 
@@ -89,6 +90,17 @@ export default function App() {
     const timer = setTimeout(() => setToast(null), toast.error ? 9000 : 6500);
     return () => clearTimeout(timer);
   }, [toast]);
+  useEffect(() => {
+    const closeMenus = () => { setImportOpen(false); setExportOpen(false); };
+    window.addEventListener("popstate", closeMenus);
+    return () => window.removeEventListener("popstate", closeMenus);
+  }, []);
+
+  function navigate(next, replace = false) {
+    setImportOpen(false);
+    setExportOpen(false);
+    navigateRoute(next, replace);
+  }
 
   const hasProject = Boolean(state.imported);
   const vimRows = state.imported?.vim ? VIM_ROWS : NONE;
@@ -100,19 +112,23 @@ export default function App() {
     const text = `${doc.invoice?.number ?? ""} ${doc.vim?.reference ?? ""} ${doc.supplier?.name ?? ""} ${doc.vim?.vendor ?? ""}`.toLowerCase();
     return (filter === "all" || doc.status === filter) && text.includes(search.trim().toLowerCase());
   });
-  const selected = documents.find((doc) => doc.id === selectedId) ?? list[0] ?? documents[0];
+  const selected = route.documentId ? documents.find((doc) => doc.id === route.documentId) : list[0] ?? documents[0];
   const position = list.findIndex((doc) => doc.id === selected?.id);
   const processedCount = documents.filter((doc) => doc.status === "processed").length;
   const notify = (text, error = false) => setToast({ text, error, id: Date.now() });
 
-  const select = (id) => { setSelectedId(id); setPage("documents"); if (narrow()) setListOpen(false); };
+  const select = (id, view = "main", replace = false) => {
+    navigate({ page: "documents", documentId: id, view }, replace);
+    setSearch("");
+    setFilter("all");
+    if (narrow()) setListOpen(false);
+  };
   const setReview = (docId, updater) => setState((current) => ({ ...current, reviews: { ...current.reviews, [docId]: updater(current.reviews[docId] ?? {}) } }));
 
   function newProject() {
     if (hasProject && !window.confirm("Creare un nuovo progetto? Le lavorazioni della demo verranno azzerate.")) return;
     setState((current) => ({ ...emptyState(), rules: current.rules, imported: { vim: false, xml: false } }));
     setStaged({ vim: false, xml: false });
-    setSelectedId(null);
     setPage("documents");
     setExportOpen(false);
     setImportOpen(true);
@@ -128,8 +144,7 @@ export default function App() {
     const orphan = preview.documents.filter((doc) => doc.status === "orphan").length;
     setStaged({ vim: false, xml: false });
     setImportOpen(false);
-    setPage("documents");
-    setSelectedId(preview.documents[0]?.id ?? null);
+    select(preview.documents[0]?.id);
     notify(`Importazione completata: ${next.vim ? VIM_ROWS.length : 0} righe VIM, ${next.xml ? XML_INVOICES.length : 0} XML.\n${matched.length} abbinamenti (${normalized} con riferimento normalizzato)${missing ? `, ${missing} righe VIM senza XML` : ""}${orphan ? `, ${orphan} XML senza VIM` : ""}.`);
   }
 
@@ -152,7 +167,7 @@ export default function App() {
       const rows = doc.preview.rows.length;
       notify(`Documento ${doc.invoice.number.replace(/\s+/g, " ")} elaborato: ${rows} righe aggiunte al lotto ${project.batchId}.`);
       const next = documents.slice(documents.indexOf(doc) + 1).find((item) => item.status === "review");
-      if (next) setSelectedId(next.id);
+      if (next) select(next.id, "main", true);
     } else if (status === "discarded") notify(`Documento ${doc.invoice?.number ?? doc.vim.reference} scartato.`);
   }
 
@@ -185,7 +200,8 @@ export default function App() {
         : "Scollegare l'XML? Riga VIM e fattura resteranno nel progetto; la bozza verrà azzerata."].join("\n");
       if (!window.confirm(message)) return false;
       setState((current) => ({ ...current, ...patch }));
-      setSelectedId(vimId);
+      if (page === "documents") select(vimId, route.view, true);
+      if (page === "vim" && route.link) navigate({ page: "vim", link: `vim:${vimId}` }, true);
       notify(xmlId ? "Collegamento confermato. Proposta ricalcolata; verifica i controlli prima di registrare." : "Collegamento rimosso. Riga VIM e XML conservati.");
       return true;
     } catch (error) {
@@ -291,7 +307,12 @@ export default function App() {
         {!toast.error && <span className="toast-timer" />}
       </div></div>}
 
-    {page === "home" || !hasProject ? <div className="page-scroll"><section className="welcome">
+    {page === "not-found" || (page === "rules" && route.column && !TRACE_COLUMNS.some((column) => column.letter === route.column)) ? <div className="page-scroll"><section className="welcome">
+      <h1>Pagina non trovata</h1><p>L'indirizzo non corrisponde a una pagina della demo.</p>
+      <button type="button" className="primary-button" onClick={() => setPage("home")}>Torna alla home</button>
+    </section></div>
+    : page === "home" || !hasProject ? <div className="page-scroll"><section className="welcome">
+      {!hasProject && page !== "home" && <p className="info-banner">Questa pagina richiede un progetto nel browser. Carica l'esempio completo per iniziare: i dati non sono condivisi tramite l'URL.</p>}
       <p className="eyebrow">ELABORAZIONE TRACCIATI · SAP</p>
       <h1>Meno Excel, più controllo sulle fatture</h1>
       <p>Software d'appoggio a SAP per un gruppo bancario: automatizza le regole standard e lascia all'operatore le eccezioni. Prova il flusso di <b>registrazione fatture passive</b>, dal VIM al tracciato contabile.</p>
@@ -308,11 +329,18 @@ export default function App() {
         <p className="welcome-hint muted">Il progetto demo resta salvato solo in questo browser.</p>
       </div>
     </section></div>
-    : page === "vim" ? <VimPage project={project} focusId={vimFocus} onLink={linkVim} onOpen={select} />
+    : page === "vim" ? <VimPage project={project} editing={route.link}
+      onEdit={(link) => navigate({ page: "vim", link })} onLink={linkVim} onOpen={select} />
     : page === "suppliers" ? <SupplierPage suppliers={state.suppliers} onChange={changeSupplier} />
     : page === "rules" ? <RulesPage rules={state.rules} hasProject={hasProject} documents={documents}
+      editing={TRACE_COLUMNS.find((column) => column.letter === route.column)?.index ?? null}
+      onEdit={(index) => navigate({ page: "rules", column: TRACE_COLUMNS.find((column) => column.index === index)?.letter })}
       onChange={updateRules}
       onReset={() => updateRules(structuredClone(DEFAULT_ACCOUNTING_RULES))} />
+    : route.documentId && !selected ? <div className="page-scroll"><section className="welcome">
+      <h1>Documento non disponibile</h1><p>Il documento richiesto non è presente nel progetto salvato in questo browser.</p>
+      <button type="button" className="primary-button" onClick={() => setPage("documents")}>Torna alle fatture</button>
+    </section></div>
     : <div className={`workbench ${listOpen ? "invoice-list-open" : ""}`}>
       <aside className="invoice-sidebar" aria-label="Elenco fatture" hidden={!listOpen}>
         <div className="invoice-sidebar-heading"><strong>Fatture <span>{documents.length}</span></strong>
@@ -336,14 +364,15 @@ export default function App() {
       </aside>
       {selected ? <div className={`analysis-area ${workspace}-active`} style={{ "--split": `${split}%` }}>
         <nav className="workspace-tabs" aria-label="Documento e proposta">
-          <button type="button" className={workspace === "proposal" ? "active" : ""} onClick={() => setWorkspace("proposal")}>Proposta</button>
-          <button type="button" className={workspace === "document" ? "active" : ""} onClick={() => setWorkspace("document")}>Documento</button>
+          <button type="button" className={workspace === "proposal" ? "active" : ""} onClick={() => select(selected.id)}>Proposta</button>
+          <button type="button" className={workspace === "document" ? "active" : ""} onClick={() => select(selected.id, "document")}>Documento</button>
         </nav>
         <RegistrationPane key={`proposal-${selected.id}`} doc={selected}
+          tab={route.view === "trace" ? "trace" : "main"} onTab={(tab) => select(selected.id, tab)}
           association={<AssociationControls key={`${selected.id}-${selected.xmlId}`} doc={selected} documents={documents} onLink={linkVim}
-            onOpenVim={(id) => { setVimFocus(id); setPage("vim"); }} />}
+            onOpenVim={(id) => navigate({ page: "vim", link: `${selected.vim ? "vim" : "xml"}:${id}` })} />}
           navigation={{ position: position + 1, count: list.length, listOpen, onToggleList: () => setListOpen((value) => !value),
-            onPrev: () => setSelectedId(list[position - 1].id), onNext: () => setSelectedId(list[position + 1].id) }}
+            onPrev: () => select(list[position - 1].id), onNext: () => select(list[position + 1].id) }}
           onReview={(updater) => setReview(selected.id, updater)} onAction={runAction}
           onStatus={(status) => setStatus(selected, status)} />
         <SplitHandle split={split} onChange={setSplit} />

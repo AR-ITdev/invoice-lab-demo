@@ -92,7 +92,18 @@ npm run build    # build statica in dist/
 
 ## Deploy
 
-La build è statica (`base: "./"`), quindi va bene qualsiasi hosting statico (Vercel, Netlify, GitHub Pages, sottocartella di un altro sito). Nessuna variabile d'ambiente richiesta.
+La build è statica, con asset dalla root (`base: "/"`). Su Vercel usare `npm run build` e la directory di output `dist`: le riscritture in `vercel.json` consentono di aprire e ricaricare direttamente le rotte. Nessuna variabile d'ambiente richiesta. Altri hosting devono configurare il fallback delle rotte verso `index.html`; la pubblicazione in sottocartella richiede una configurazione dedicata di base e percorsi.
+
+### Navigazione
+
+- `/`: home, anche con un progetto già salvato.
+- `/fatture`: elenco e lavorazione; `/fatture/vim-01` apre il documento selezionato.
+- `/fatture/vim-01/tracciato`: editor del tracciato; `/fatture/vim-01/documento`: vista documento.
+- `/vim`: abbinamenti; il parametro `collegamento` identifica l'editor aperto, ad esempio `/vim?collegamento=xml%3Axml-01`.
+- `/anagrafica`: fornitori.
+- `/regole`: regole; `/regole/AA`: editor della colonna AA.
+
+Indietro/Avanti ripristinano pagina e selezione dall'URL. Importazione ed esportazione sono pannelli temporanei, non pagine distinte. Gli URL non contengono i dati del progetto: su un browser senza dati salvati viene richiesto di caricare l'esempio. Documenti assenti e percorsi non riconosciuti mostrano un messaggio esplicito, senza aprire silenziosamente un'altra fattura.
 
 ## Struttura
 

@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/fatture/:path*", "destination": "/index.html" },
+    { "source": "/vim", "destination": "/index.html" },
+    { "source": "/anagrafica", "destination": "/index.html" },
+    { "source": "/regole/:path*", "destination": "/index.html" }
+  ]
+}
