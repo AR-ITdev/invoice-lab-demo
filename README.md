@@ -35,7 +35,7 @@ In **Regole**, il pulsante **Modifica** apre un editor per ciascuna delle 50 col
 - Composizioni con testo, fonti XML/anagrafica/VIM/registrazione/calcolo, separatori espliciti, formati data e cifre minime.
 - Casi ordinabili **se → allora**, con più condizioni AND; vince il primo caso valido. Casi distinti permettono alternative OR. Il risultato **altrimenti** è esplicito.
 - Confronti: uguale, diverso, contiene, vuoto/non vuoto, maggiore/minore. I confronti numerici accettano la virgola decimale italiana.
-- Impostazioni generali per tutte le righe e specifiche per Fornitore, Servizi e Commissioni. La categoria può ereditare la regola generale oppure scegliere esplicitamente il calcolo standard.
+- Tre sezioni indipendenti per Fornitore, Servizi e Commissioni, ciascuna con modalità, composizioni e condizioni proprie. Standard mantiene il calcolo iniziale per la categoria. Le precedenti regole condivise vengono riportate in copie indipendenti nell'editor, conservando i risultati già configurati.
 - Anteprima sul documento di esempio e salvataggio esplicito; **Annulla** non applica la bozza. Le impostazioni persistono nel browser e governano sia la proposta sia il CSV.
 
 Le fonti leggono dati originali o calcolati, mai altre celle personalizzate. Le forzature manuali della singola fattura restano prioritarie e soggette agli stessi controlli. Modificare il profilo revoca le verifiche precedenti e, previa conferma, riapre le registrazioni elaborate. Una regola invalida o una scrittura incoerente blocca conferma ed esportazione: le condizioni non aggirano i controlli contabili e fiscali.

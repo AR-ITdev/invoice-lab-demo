@@ -293,15 +293,14 @@ export default function App() {
 
     {page === "home" || !hasProject ? <div className="page-scroll"><section className="welcome">
       <p className="eyebrow">ELABORAZIONE TRACCIATI · SAP</p>
-      <h1>Elaborazione tracciati per registrazione fatture passive, riconciliazione conti, registrazione entrata merci</h1>
-      <p>Software d'appoggio a SAP per un gruppo bancario: sostituisce i passaggi manuali tra SAP e fogli Excel, segue il vero flusso di lavoro e automatizza le regole standard, lasciando all'operatore (human in the loop) le casistiche particolari, spesso dovute a errori di fatturazione dei fornitori.</p>
-      <p>Questa demo mostra il flusso di <b>registrazione fatture passive</b>: incrocia l'export VIM con le fatture elettroniche XML, propone la registrazione contabile, applica le regole di colonna e genera il tracciato a {TRACE_COLUMNS.length} colonne da caricare in SAP. Fornitori, importi e codici sono inventati.</p>
-      <p className="info-banner">Riconciliazione conti ed entrata merci fanno parte del perimetro del prodotto, ma non sono disponibili in questa demo. Importazione simulata e CSV dimostrativi, non certificati per il caricamento in SAP.</p>
+      <h1>Meno Excel, più controllo sulle fatture</h1>
+      <p>Software d'appoggio a SAP per un gruppo bancario: automatizza le regole standard e lascia all'operatore le eccezioni. Prova il flusso di <b>registrazione fatture passive</b>, dal VIM al tracciato contabile.</p>
       <div className="welcome-grid">
-        <article className="card"><span className="card-icon"><FileSpreadsheet /></span><h2>1. Importa VIM e XML</h2><p>Abbinamento automatico tra righe VIM e FatturaPA con riferimenti normalizzati, anagrafica fornitori e codici SAP.</p></article>
-        <article className="card"><span className="card-icon"><Search /></span><h2>2. Verifica la proposta</h2><p>Classificazione righe, chiavi contabili, codice IVA, competenza e controlli di quadratura prima della conferma.</p></article>
-        <article className="card"><span className="card-icon"><Landmark /></span><h2>3. Esporta il lotto</h2><p>CSV a {TRACE_COLUMNS.length} colonne per il caricamento in SAP ed esito di lavorazione da riportare nel VIM.</p></article>
+        <article className="card"><span className="card-icon"><FileSpreadsheet /></span><h2>1. Abbina VIM e XML</h2><p>Collega le righe VIM alle fatture e verifica i fornitori.</p></article>
+        <article className="card"><span className="card-icon"><Search /></span><h2>2. Verifica la proposta</h2><p>Controlla conti, IVA e quadratura. Gestisci le eccezioni prima di confermare.</p></article>
+        <article className="card"><span className="card-icon"><Landmark /></span><h2>3. Esporta il lotto</h2><p>Genera il tracciato a {TRACE_COLUMNS.length} colonne e l'esito VIM in CSV.</p></article>
       </div>
+      <p className="welcome-scope">Solo dati inventati e importazione simulata. CSV non certificati per SAP. Riconciliazione conti ed entrata merci non incluse nella demo.</p>
       <div className="welcome-actions">
         {hasProject ? <button type="button" className="primary-button" onClick={() => setPage("documents")}>Riprendi il progetto</button>
           : <button type="button" className="primary-button" onClick={newProject}>Nuovo progetto</button>}

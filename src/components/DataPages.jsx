@@ -42,9 +42,9 @@ export function VimPage({ project, focusId, onLink, onOpen }) {
       <tbody>{rows.map((doc) => <Fragment key={doc.id}><tr className={editing === `vim:${doc.id}` ? "association-selected" : ""}><td><b>{doc.vim.reference}</b></td><td>{doc.vim.vendor}</td><td>{dateText(doc.vim.sdiDate)}</td><td className="number">{money(doc.vim.amount)}</td>
           <td>{doc.invoice ? <button type="button" className="secondary-button" onClick={() => onOpen(doc.id)}>{doc.invoice.number} · Apri fattura</button> : "Nessun XML"}</td>
           <td><span className={`match-tag ${doc.match}`}>{MATCH_LABELS[doc.match]}</span></td><td><Badge status={doc.status} /></td>
-          <td><button type="button" className="secondary-button" aria-label={`Gestisci riga VIM ${doc.vim.reference}`} aria-expanded={editing === `vim:${doc.id}`}
+          <td><div className="vim-row-actions"><button type="button" className="secondary-button" aria-label={`Gestisci riga VIM ${doc.vim.reference}`} aria-expanded={editing === `vim:${doc.id}`}
             onClick={() => setEditing(editing === `vim:${doc.id}` ? null : `vim:${doc.id}`)}>Gestisci</button>
-            <button type="button" className="secondary-button" onClick={() => onOpen(doc.id)}>Apri lavorazione</button></td></tr>{editor(doc, 8, "vim")}</Fragment>)}
+            <button type="button" className="secondary-button" onClick={() => onOpen(doc.id)}>Apri lavorazione</button></div></td></tr>{editor(doc, 8, "vim")}</Fragment>)}
         {!rows.length && <tr><td colSpan={8}>Nessuna riga VIM per questo filtro.</td></tr>}
       </tbody></table></div>
     <h2>Fatture XML e collegamento inverso</h2>
@@ -52,9 +52,9 @@ export function VimPage({ project, focusId, onLink, onOpen }) {
       <tbody>{xmls.map((doc) => <Fragment key={doc.id}><tr className={editing === `xml:${doc.id}` ? "association-selected" : ""}>
         <td><b>{doc.invoice.number}</b><small>{doc.invoice.fileName}</small></td><td>{doc.supplier?.name ?? doc.invoice.supplierVat}</td><td>{money(doc.invoice.declaredTotal)}</td>
         <td>{doc.vim ? `${doc.vim.reference} · ${doc.vim.vendor}` : "Nessuna riga VIM"}</td>
-        <td><button type="button" className="secondary-button" onClick={() => onOpen(doc.id)}>Apri fattura</button>
+        <td><div className="vim-row-actions"><button type="button" className="secondary-button" onClick={() => onOpen(doc.id)}>Apri fattura</button>
           <button type="button" className="secondary-button" aria-label={`Gestisci collegamento fattura ${doc.invoice.number}`} aria-expanded={editing === `xml:${doc.id}`}
-            onClick={() => setEditing(editing === `xml:${doc.id}` ? null : `xml:${doc.id}`)}>{doc.vim ? "Gestisci collegamento VIM" : "Collega VIM"}</button></td>
+            onClick={() => setEditing(editing === `xml:${doc.id}` ? null : `xml:${doc.id}`)}>{doc.vim ? "Gestisci collegamento VIM" : "Collega VIM"}</button></div></td>
       </tr>{editor(doc, 5, "xml")}</Fragment>)}
         {!xmls.length && <tr><td colSpan={5}>Nessuna fattura XML per questo filtro.</td></tr>}
       </tbody></table></div>

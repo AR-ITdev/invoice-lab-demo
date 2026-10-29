@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  RULE_DATE_FORMATS, RULE_FIELDS, RULE_OPERATORS, RULE_SCOPES, VALUELESS_OPERATORS,
+  RULE_DATE_FORMATS, RULE_FIELDS, RULE_OPERATORS, ROW_RULE_SCOPES, VALUELESS_OPERATORS, independentRowRules,
   evaluateColumnRule, ruleContext, validateColumnRule,
 } from "../lib/columnRules.js";
 
@@ -90,14 +90,13 @@ function Cases({ rule, onChange }) {
 }
 
 export default function ColumnRuleEditor({ column, settings, sample, onSave, onCancel }) {
-  const [scope, setScope] = useState("all");
-  const [drafts, setDrafts] = useState(() => structuredClone(settings ?? {}));
+  const [drafts, setDrafts] = useState(() => independentRowRules(settings));
   const [error, setError] = useState("");
-  const rule = drafts[scope] ?? { mode: "default" };
-  const update = (next) => { setDrafts((current) => ({ ...current, [scope]: next })); setError(""); };
-  function modeChanged(mode) {
+  const update = (scope, next) => { setDrafts((current) => ({ ...current, [scope]: next })); setError(""); };
+  function modeChanged(scope, mode) {
+    const rule = drafts[scope];
     const parts = rule.parts ?? rule.otherwise ?? standardParts();
-    update(mode === "conditional" ? { mode, cases: rule.cases ?? [{ when: [newCondition()], parts: standardParts() }], otherwise: parts }
+    update(scope, mode === "conditional" ? { mode, cases: rule.cases ?? [{ when: [newCondition()], parts: standardParts() }], otherwise: parts }
       : mode === "compose" ? { mode, parts } : { mode });
   }
   function save() {
@@ -109,41 +108,34 @@ export default function ColumnRuleEditor({ column, settings, sample, onSave, onC
       setError(issue.message);
     }
   }
-  let preview = "Apri un progetto con fatture per vedere un esempio.";
-  if (sample) {
-    try {
-      const row = sample.preview.rows.find((item) => scope === "all" || item.slot === scope);
-      if (row) {
-        const context = row.context;
-        const effective = drafts[scope] ?? drafts.all ?? { mode: "default" };
-        preview = `${sample.invoice.number} · ${row.label}: «${evaluateColumnRule(effective, ruleContext(context, column.value(context)))}»`;
-      } else preview = "Categoria assente nella fattura di esempio.";
-    } catch (issue) {
-      if (!(issue instanceof Error)) throw issue;
-      preview = `Anteprima non disponibile: ${issue.message}`;
-    }
-  }
   return <section className="column-rule-editor" aria-label={`Modifica regola ${column.letter}`}>
     <h3>{column.letter} · {column.label}</h3>
     <p>Standard: {column.text}</p>
-    <p className="muted">La regola specifica della categoria prevale su “Tutte le righe”. “Standard” ripristina il calcolo originale per la categoria.</p>
-    <label className="field"><span>Categoria di righe</span><select aria-label="Categoria della regola" value={scope} onChange={(event) => setScope(event.target.value)}>
-      {RULE_SCOPES.map(([key, title]) => <option key={key} value={key}>{title}</option>)}
-    </select></label>
-    <label className="field"><span>Modalità</span><select aria-label="Modalità della regola"
-      value={scope !== "all" && !Object.hasOwn(drafts, scope) ? "inherit" : rule.mode}
-      onChange={(event) => {
-        if (event.target.value === "inherit") { const next = { ...drafts }; delete next[scope]; setDrafts(next); }
-        else modeChanged(event.target.value);
-      }}>
-      {scope !== "all" && <option value="inherit">Eredita da tutte le righe</option>}
-      <option value="default">Standard</option><option value="empty">Vuoto</option><option value="compose">Testo e dati</option><option value="conditional">Condizioni</option>
-    </select></label>
-    {scope !== "all" && Object.hasOwn(drafts, scope) && <button type="button" className="secondary-button"
-      onClick={() => { const next = { ...drafts }; delete next[scope]; setDrafts(next); }}>Eredita da tutte le righe</button>}
-    {rule.mode === "compose" && <Parts label="Composizione" value={rule.parts} onChange={(parts) => update({ ...rule, parts })} />}
-    {rule.mode === "conditional" && <Cases rule={rule} onChange={update} />}
-    <p className="info-banner" aria-live="polite">Anteprima: {preview}</p>
+    <p className="muted">Ogni categoria ha una regola indipendente. Standard mantiene il calcolo iniziale della colonna per quella categoria.</p>
+    {ROW_RULE_SCOPES.map(([scope, title]) => {
+      const rule = drafts[scope];
+      let preview = "Apri un progetto con fatture per vedere un esempio.";
+      if (sample) {
+        try {
+          const row = sample.preview.rows.find((item) => item.slot === scope);
+          preview = row ? `${sample.invoice.number} · ${row.label}: «${evaluateColumnRule(rule, ruleContext(row.context, column.value(row.context)))}»`
+            : "Categoria assente nella fattura di esempio.";
+        } catch (issue) {
+          if (!(issue instanceof Error)) throw issue;
+          preview = `Anteprima non disponibile: ${issue.message}`;
+        }
+      }
+      return <fieldset className="rule-case" key={scope}>
+        <legend>{title}</legend>
+        <label className="field"><span>Modalità</span><select aria-label={`${title}, modalità della regola`}
+          value={rule.mode} onChange={(event) => modeChanged(scope, event.target.value)}>
+          <option value="default">Standard</option><option value="empty">Vuoto</option><option value="compose">Testo e dati</option><option value="conditional">Condizioni</option>
+        </select></label>
+        {rule.mode === "compose" && <Parts label={`Composizione ${title}`} value={rule.parts} onChange={(parts) => update(scope, { ...rule, parts })} />}
+        {rule.mode === "conditional" && <Cases rule={rule} onChange={(next) => update(scope, next)} />}
+        <p className="info-banner" aria-live="polite">Anteprima: {preview}</p>
+      </fieldset>;
+    })}
     {error && <p role="alert" className="warning-banner">{error}</p>}
     <div className="association-actions"><button type="button" className="primary-button" onClick={save}>Salva regola</button>
       <button type="button" className="secondary-button" onClick={onCancel}>Annulla</button></div>

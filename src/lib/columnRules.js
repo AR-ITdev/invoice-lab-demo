@@ -29,6 +29,12 @@ export const RULE_DATE_FORMATS = [
   ["yyyy-mm-dd", "AAAA-MM-GG"], ["yyyymm", "AAAAMM"], ["yyyy", "AAAA"], ["mm", "MM"], ["dd", "GG"],
 ];
 export const RULE_SCOPES = [["all", "Tutte le righe"], ["supplier", "Fornitore"], ["services", "Servizi"], ["fees", "Commissioni"]];
+export const ROW_RULE_SCOPES = RULE_SCOPES.filter(([key]) => key !== "all");
+
+export function independentRowRules(settings = {}) {
+  return Object.fromEntries(ROW_RULE_SCOPES.map(([scope]) =>
+    [scope, structuredClone(settings[scope] ?? settings.all ?? { mode: "default" })]));
+}
 export const VALUELESS_OPERATORS = new Set(["empty", "notEmpty"]);
 const fields = new Map(RULE_FIELDS.map(([key, label, type]) => [key, { label, type }]));
 const operators = new Set(RULE_OPERATORS.map(([key]) => key));

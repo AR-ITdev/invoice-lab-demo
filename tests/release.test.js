@@ -4,6 +4,19 @@ import { SUPPLIERS, VIM_ROWS, XML_INVOICES } from "../src/data/demoData.js";
 import { buildProject, traceCsv, updateSupplier } from "../src/lib/project.js";
 import { column, DEFAULT_ACCOUNTING_RULES } from "../src/lib/proposal.js";
 import { readStored, writeStored } from "../src/lib/storage.js";
+import { independentRowRules } from "../src/lib/columnRules.js";
+
+test("row editors preserve legacy effective rules as independent copies", () => {
+  const settings = { all: { mode: "compose", parts: [{ type: "text", value: "GENERAL" }] }, supplier: { mode: "empty" } };
+  const rules = independentRowRules(settings);
+  assert.deepEqual(Object.keys(rules), ["supplier", "services", "fees"]);
+  assert.equal(rules.supplier.mode, "empty");
+  assert.deepEqual(rules.services, settings.all);
+  rules.services.parts[0].value = "CHANGED";
+  assert.equal(rules.fees.parts[0].value, "GENERAL");
+  assert.equal(settings.all.parts[0].value, "GENERAL");
+  assert.deepEqual(independentRowRules().fees, { mode: "default" });
+});
 
 const initial = () => ({
   suppliers: structuredClone(SUPPLIERS), reviews: {
