@@ -15,7 +15,6 @@ import { readStored, writeStored } from "./lib/storage.js";
 import useRoute from "./lib/useRoute.js";
 
 const STORAGE_KEY = "tracciati-demo-state-v1";
-const PORTFOLIO_URL = "https://ar-it.dev/portfolio";
 const today = () => new Date().toISOString().slice(0, 10);
 const emptyState = () => ({ schemaVersion: 2, imported: null, suppliers: structuredClone(SUPPLIERS), manualLinks: {}, reviews: {}, batchDate: today(), rules: structuredClone(DEFAULT_ACCOUNTING_RULES) });
 
@@ -254,7 +253,6 @@ export default function App() {
     disabled={!hasProject} onClick={() => { setPage(id); setImportOpen(false); setExportOpen(false); }}>{label}{extra}</button>;
 
   return <main className="app-shell">
-    <div className="demo-ribbon">Demo con dati inventati: tutto resta nel browser. <a href={PORTFOLIO_URL}>Torna al portfolio ar-it.dev</a></div>
     <header className="topbar">
       <button type="button" className="brand-mark" aria-label="Homepage" title="Homepage" onClick={() => { setPage("home"); setImportOpen(false); setExportOpen(false); }}><Landmark /></button>
       <div className="brand-title"><strong>Elaborazione Tracciati</strong>
